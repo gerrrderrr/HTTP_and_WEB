@@ -1,10 +1,12 @@
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -46,7 +48,11 @@ public class Server {
                 if (parts.length != 3) {
                     Thread.currentThread().interrupt();
                 }
-                Request request = new Request(parts[0], parts[1]);
+                Request request = Request.createRequest(parts[0], parts[1]);
+                List<String> listOfSomeParams = request.getQueryParam("value");
+                List<String> listOfAllParams = request.getQueryParams();
+                System.out.println(listOfAllParams + "\n" + listOfSomeParams);
+
                 if (handlers.containsKey(request.getMethod())) {
                     if (handlers.get(request.getMethod()).containsKey(request.getPath())) {
                         handlers.get(request.getMethod()).get(request.getPath()).handle(request, out);
@@ -56,7 +62,7 @@ public class Server {
                 } else {
                     notAvailableHandler("404", "Not Found");
                 }
-            } catch (IOException e) {
+            } catch (IOException | URISyntaxException e) {
                 throw new RuntimeException(e);
             }
         }));
