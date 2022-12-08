@@ -7,6 +7,9 @@ public class Main {
         Server server = new Server();
         for (String path : validPaths) {
             server.addHandler("GET", path, (request, responseStream) -> server.basicHandler(path));
+            if (path.equals("/forms.html")) {
+                server.addHandler("POST", "/forms.html", (request, responseStream) -> server.basicHandler(path));
+            }
         }
         server.serverStart();
     }
