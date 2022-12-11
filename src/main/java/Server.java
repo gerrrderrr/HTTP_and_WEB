@@ -1,7 +1,8 @@
+import org.apache.commons.fileupload.FileItem;
+
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
@@ -14,7 +15,6 @@ public class Server {
     private static final int LIMIT = 4096;
     private static final int THREAD_POOL_SIZE = 64;
     private final Map<String, Map<String, MyHandler>> handlers;
-    List<String> allowedMethods;
     private BufferedInputStream in;
     private BufferedOutputStream out;
 
@@ -53,7 +53,7 @@ public class Server {
                 } else {
                     notAvailableHandler("404", "Not Found");
                 }
-            } catch (IOException | URISyntaxException e) {
+            } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }));
@@ -75,11 +75,10 @@ public class Server {
         }
     }
 
-    private Request formRequest(BufferedInputStream in) throws IOException, URISyntaxException {
+    private Request formRequest(BufferedInputStream in) throws Exception {
         in.mark(LIMIT);
         byte[] buffer = new byte[LIMIT];
         int read = in.read(buffer);
-
         byte[] requestLineDelimiter = new byte[]{'\r', '\n'};
         int requestLineEnd = indexOf(buffer, requestLineDelimiter, 0, read);
         if (requestLineEnd == -1) {
@@ -121,6 +120,7 @@ public class Server {
         byte[] headersBytes = in.readNBytes(headersEnd - headersStart);
         List<String> headers = Arrays.asList(new String(headersBytes).split("\r\n"));
         String body = null;
+        String contentType = null;
         if (!method.equals("GET")) {
             in.skip(headersDelimiter.length);
             Optional<String> contentLength = extractHeader(headers, "Content-Length");
@@ -129,8 +129,18 @@ public class Server {
                 final byte[] bodyBytes = in.readNBytes(length);
                 body = new String(bodyBytes);
             }
+            Optional<String> findContentType = extractHeader(headers, "Content-Type");
+            if (findContentType.isPresent()) {
+                contentType = findContentType.get();
+            }
         }
-        Request request = Request.createRequest(method, requestTarget, body);
+        assert contentType != null;
+        Request request = Request.createRequest(method, requestTarget, body, contentType);
+        List<FileItem> fileName = request.getPart("image");
+        String path = "src/main/resources/" + fileName.get(0).getName();
+        if (Files.exists(Path.of(path))) {
+            fileName.get(0).write(new File(path));
+        }
         String result = """
                 Query params: %s
                 Query params named "value": %s
@@ -138,13 +148,20 @@ public class Server {
                 Body params: %s
                 Body params named "login": %s
                 Body params named "password": %s
+                Multipart: %s
+                Multipart named "login": %s
+                Multipart named "image": %s
                 """.formatted(
                 request.getQueryParams()
                 , request.getQueryParam("value")
                 , request.getQueryParam("title")
                 , request.getPostParams()
                 , request.getPostParam("login")
-                , request.getPostParam("password"));
+                , request.getPostParam("password")
+                , request.getParts()
+                , request.getPart("login")
+                , request.getPart("image")
+        );
         System.out.println(result);
         return request;
     }
