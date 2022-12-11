@@ -1,18 +1,19 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-  <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
 </head>
 <body>
 <h1>Forms Demo</h1>
-<form>
-  <input name="login" placeholder="Login">
-  <input name="password" type="password" placeholder="Password">
-  <button>Login</button>
+<form enctype="multipart/form-data" method="post" action="http://localhost:9999/forms.html?name=gogo&value=34&value=55&title=booboo">
+    <input name="login" placeholder="Login">
+    <input name="password" type="password" placeholder="Password">
+    <input name="image" type="file">
+    <button>Send</button>
 </form>
 </body>
 </html>
